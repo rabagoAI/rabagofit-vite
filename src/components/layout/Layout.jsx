@@ -13,11 +13,11 @@ export default function Layout() {
     const showBreadcrumbs = location.pathname !== '/';
 
     return (
-        <div className="min-h-screen grid-pattern transition-colors duration-300 bg-gray-50 dark:bg-[#0a0f1c] text-gray-900 dark:text-white flex flex-col overflow-x-hidden relative">
+        <div className="min-h-[100dvh] grid-pattern transition-colors duration-300 bg-gray-50 dark:bg-[#0a0f1c] text-gray-900 dark:text-white flex flex-col overflow-x-hidden relative supports-[min-height:100dvh]:min-h-[100dvh]">
             <SkipLink />
 
-            {/* Ambient Background Lights - Optimized with lower opacity */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+            {/* Ambient Background Lights - Optimized: Hidden on mobile to improve performance */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none hidden md:block">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-[100px] animate-blob mix-blend-multiply dark:mix-blend-screen"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-[100px] animate-blob animation-delay-2000 mix-blend-multiply dark:mix-blend-screen"></div>
                 <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] bg-purple-500/10 dark:bg-purple-500/5 rounded-full blur-[100px] animate-blob animation-delay-4000 mix-blend-multiply dark:mix-blend-screen"></div>

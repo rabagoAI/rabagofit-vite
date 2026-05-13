@@ -4,6 +4,7 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import SkipLink from '../common/SkipLink';
 import Breadcrumbs from '../common/Breadcrumbs';
+import ToastContainer from '../common/ToastContainer';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Layout() {
@@ -49,6 +50,7 @@ export default function Layout() {
             </main>
 
             <Footer />
+            <ToastContainer />
         </div>
     );
 }

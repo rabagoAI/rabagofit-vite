@@ -5,17 +5,20 @@ import './index.css'
 import { ThemeProvider } from './context/ThemeContext'
 import { WorkoutProvider } from './context/WorkoutContext'
 import { UserProvider } from './context/UserContext'
+import { ToastProvider } from './context/ToastContext'
 import { BrowserRouter } from 'react-router-dom'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <ThemeProvider>
-        <UserProvider>
-          <WorkoutProvider>
-            <App />
-          </WorkoutProvider>
-        </UserProvider>
+        <ToastProvider>
+          <UserProvider>
+            <WorkoutProvider>
+              <App />
+            </WorkoutProvider>
+          </UserProvider>
+        </ToastProvider>
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>,

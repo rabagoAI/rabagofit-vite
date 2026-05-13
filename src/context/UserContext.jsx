@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { z } from 'zod';
+import { useToast } from './ToastContext';
 
 const UserContext = createContext();
 
@@ -29,6 +30,7 @@ const FullUserDataSchema = z.object({
 });
 
 export function UserProvider({ children }) {
+    const { addToast } = useToast();
     // --- State ---
     const [userProfile, setUserProfile] = useState(() => {
         try {
@@ -236,7 +238,13 @@ export function UserProvider({ children }) {
 
         if (newUnlocked.length > 0) {
             setAchievements(prev => [...prev, ...newUnlocked]);
-            // alert(`¡Logro Desbloqueado: ${newUnlocked[0].name}!`); // Could trigger a toast here
+            newUnlocked.forEach(ach => {
+                addToast(ach.desc, {
+                    type: 'achievement',
+                    title: `🏆 ¡Logro desbloqueado: ${ach.name}!`,
+                    duration: 5000,
+                });
+            });
         }
     };
 

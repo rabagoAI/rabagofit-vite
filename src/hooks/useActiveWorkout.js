@@ -57,7 +57,9 @@ export function useActiveWorkout(timer) {
             exercises: exercises.map(ex => ({
                 ...ex,
                 id: ex.id || Date.now() + Math.random(),
-                sets: ex.sets || [{ id: 1, weight: 0, reps: 0, completed: false }]
+                sets: Array.isArray(ex.sets) && ex.sets.length > 0
+                    ? ex.sets
+                    : [{ id: 1, weight: 0, reps: 0, completed: false }]
             })),
             finished: false
         };

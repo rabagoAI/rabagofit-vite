@@ -47,7 +47,19 @@ export default function Workouts() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {routines.map(routine => (
                         <div key={routine.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 card-hover group cursor-pointer"
-                            onClick={() => startWorkout(routine.name)}
+                            onClick={() => {
+                                const exercises = routine.exercises.map((ex, i) => ({
+                                    id: Date.now() + i,
+                                    name: ex.name,
+                                    sets: Array.from({ length: ex.sets }, (_, j) => ({
+                                        id: j + 1,
+                                        weight: 0,
+                                        reps: 0,
+                                        completed: false
+                                    }))
+                                }));
+                                startWorkout(routine.name, exercises);
+                            }}
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 text-emerald-500 rounded-lg flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">

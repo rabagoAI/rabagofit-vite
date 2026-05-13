@@ -5,10 +5,12 @@ import {
     BarChart2, Calendar, LayoutDashboard, X, Bell, Monitor, Eye, Coffee
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useUser } from '../../context/UserContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Navbar() {
     const { theme, setTheme, activeTheme } = useTheme();
+    const { userProfile } = useUser();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
@@ -184,7 +186,9 @@ export default function Navbar() {
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                                 className="w-9 h-9 bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-600 dark:to-gray-800 rounded-full flex items-center justify-center ring-2 ring-transparent hover:ring-emerald-500 transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             >
-                                <span className="text-sm font-bold text-white">U</span>
+                                <span className="text-sm font-bold text-white">
+                                    {userProfile.name?.charAt(0).toUpperCase() || 'U'}
+                                </span>
                                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-gray-900 rounded-full"></span>
                             </button>
 
@@ -198,15 +202,17 @@ export default function Navbar() {
                                         className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-50 overflow-hidden"
                                     >
                                         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                                            <p className="text-sm text-gray-900 dark:text-white font-bold">Usuario</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">usuario@ejemplo.com</p>
+                                            <p className="text-sm text-gray-900 dark:text-white font-bold">{userProfile.name}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                {userProfile.email || 'Sin email configurado'}
+                                            </p>
                                         </div>
 
                                         <div className="p-2">
-                                            <a href="#" className="flex px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors items-center gap-3">
+                                            <Link to="/profile" className="flex px-4 py-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors items-center gap-3">
                                                 <Settings className="w-4 h-4" />
-                                                Configuración
-                                            </a>
+                                                Perfil y Ajustes
+                                            </Link>
                                             <button className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 rounded-xl transition-colors flex items-center gap-3 mt-1">
                                                 <LogOut className="w-4 h-4" />
                                                 Cerrar Sesión
@@ -245,6 +251,7 @@ export default function Navbar() {
                                 <MobileLink to="/exercises" icon={Dumbbell}>Ejercicios</MobileLink>
                                 <MobileLink to="/progress" icon={BarChart2}>Progreso</MobileLink>
                                 <MobileLink to="/routines" icon={Calendar}>Rutinas</MobileLink>
+                                <MobileLink to="/profile" icon={User}>Perfil y Ajustes</MobileLink>
                             </div>
 
                             <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-800">

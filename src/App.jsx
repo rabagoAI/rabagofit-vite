@@ -11,6 +11,7 @@ const Routines = React.lazy(() => import('./pages/Routines'))
 const RoutineDetail = React.lazy(() => import('./pages/RoutineDetail'))
 const WorkoutDetail = React.lazy(() => import('./pages/WorkoutDetail'))
 const Progress = React.lazy(() => import('./pages/Progress'))
+const Profile = React.lazy(() => import('./pages/Profile'))
 const NotFound = React.lazy(() => import('./pages/NotFound'))
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
           <Route path="routines/:id" element={<RoutineDetail />} />
           <Route path="history/:id" element={<WorkoutDetail />} />
           <Route path="progress" element={<Progress />} />
+          <Route path="profile" element={<Profile />} />
           {/* Ruta 404 Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Route>

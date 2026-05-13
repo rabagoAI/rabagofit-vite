@@ -90,14 +90,15 @@ export default function Progress() {
         workoutHistory.forEach(w => {
             const exercise = w.exercises.find(e => e.name === selectedExercise);
             if (exercise) {
-                // Find max weight lifted in this session for this exercise
                 const maxWeight = Math.max(...exercise.sets.map(s => parseFloat(s.weight) || 0));
-
                 if (maxWeight > 0) {
+                    const maxSet = exercise.sets.find(s => parseFloat(s.weight) === maxWeight);
+                    const reps = maxSet ? (parseInt(maxSet.reps) || 1) : 1;
                     data.push({
                         date: format(new Date(w.endTime), 'd MMM', { locale: es }),
                         weight: maxWeight,
-                        fullDate: new Date(w.endTime) // For sorting
+                        reps,
+                        fullDate: new Date(w.endTime)
                     });
                 }
             }

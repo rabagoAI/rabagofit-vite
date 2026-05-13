@@ -1,8 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import {
-    ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+    ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { Trophy, TrendingUp, BarChart2 } from 'lucide-react';
+import { Trophy, TrendingUp, Zap } from 'lucide-react';
+
+// Epley formula: estimated 1-rep max
+const epley1RM = (weight, reps) => {
+    if (!reps || reps <= 1) return weight;
+    return Math.round(weight * (1 + reps / 30) * 10) / 10;
+};
 
 // Helper: Calculate simple linear regression for trend line
 const calculateTrendLine = (data) => {
@@ -29,7 +35,8 @@ const calculateTrendLine = (data) => {
 };
 
 export default function PRChart({ data, exerciseName }) {
-    const [timeRange, setTimeRange] = useState('ALL'); // '1M', '3M', '6M', '1Y', 'ALL'
+    const [timeRange, setTimeRange] = useState('ALL');
+    const [show1RM, setShow1RM] = useState(true);
 
     const filteredData = useMemo(() => {
         if (!data || data.length === 0) return [];
@@ -42,16 +49,18 @@ export default function PRChart({ data, exerciseName }) {
             case '3M': cutoffDate.setMonth(now.getMonth() - 3); break;
             case '6M': cutoffDate.setMonth(now.getMonth() - 6); break;
             case '1Y': cutoffDate.setFullYear(now.getFullYear() - 1); break;
-            default: cutoffDate = new Date(0); // Beginning of time
+            default: cutoffDate = new Date(0);
         }
 
-        // Use fullDate if available (passed from Progress.jsx), otherwise rely on date order
         const filtered = data.filter(d => {
-            const dateObj = d.fullDate ? new Date(d.fullDate) : new Date(d.date); // Fallback might be shaky if date is "10 Jan"
+            const dateObj = d.fullDate ? new Date(d.fullDate) : new Date(d.date);
             return dateObj >= cutoffDate;
         });
 
-        return calculateTrendLine(filtered);
+        return calculateTrendLine(filtered).map(d => ({
+            ...d,
+            orm: epley1RM(d.weight, d.reps)
+        }));
     }, [data, timeRange]);
 
     if (!data || data.length === 0) {
@@ -65,8 +74,8 @@ export default function PRChart({ data, exerciseName }) {
 
     // --- Statistics ---
     const currentPR = data.length > 0 ? Math.max(...data.map(d => d.weight)) : 0;
+    const best1RM = filteredData.length > 0 ? Math.max(...filteredData.map(d => d.orm ?? d.weight)) : 0;
 
-    // Calculate improvement based on the visible range
     const firstWeight = filteredData.length > 0 ? filteredData[0].weight : 0;
     const lastWeight = filteredData.length > 0 ? filteredData[filteredData.length - 1].weight : 0;
     const improvement = firstWeight > 0 ? ((lastWeight - firstWeight) / firstWeight * 100).toFixed(1) : 0;
@@ -75,36 +84,61 @@ export default function PRChart({ data, exerciseName }) {
         <div className="space-y-4">
             {/* Header Controls */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-200 dark:border-emerald-800">
-                        <TrendingUp className="w-5 h-5" />
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Récord Actual</p>
-                        <div className="flex items-baseline gap-2">
-                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">{currentPR} <span className="text-sm font-medium text-gray-500">kg</span></h3>
-                            {filteredData.length >= 2 && (
-                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${parseFloat(improvement) >= 0 ? 'text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800' : 'text-red-600 bg-red-50 border border-red-200'}`}>
-                                    {parseFloat(improvement) > 0 ? '+' : ''}{improvement}%
-                                </span>
-                            )}
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-200 dark:border-emerald-800">
+                            <TrendingUp className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Récord Actual</p>
+                            <div className="flex items-baseline gap-2">
+                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">{currentPR} <span className="text-sm font-medium text-gray-500">kg</span></h3>
+                                {filteredData.length >= 2 && (
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${parseFloat(improvement) >= 0 ? 'text-emerald-700 bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800' : 'text-red-600 bg-red-50 border border-red-200'}`}>
+                                        {parseFloat(improvement) > 0 ? '+' : ''}{improvement}%
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
+
+                    {best1RM > 0 && (
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-amber-100 dark:bg-amber-900/30 rounded-xl text-amber-600 dark:text-amber-400 shadow-sm border border-amber-200 dark:border-amber-800">
+                                <Zap className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">1RM Est.</p>
+                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums tracking-tight">{best1RM} <span className="text-sm font-medium text-gray-500">kg</span></h3>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg self-start sm:self-auto">
-                    {['1M', '3M', '6M', '1Y', 'ALL'].map(range => (
-                        <button
-                            key={range}
-                            onClick={() => setTimeRange(range)}
-                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${timeRange === range
-                                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50'
-                                }`}
-                        >
-                            {range}
-                        </button>
-                    ))}
+                <div className="flex flex-col gap-2 items-end">
+                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                        {['1M', '3M', '6M', '1Y', 'ALL'].map(range => (
+                            <button
+                                key={range}
+                                onClick={() => setTimeRange(range)}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${timeRange === range
+                                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50'
+                                    }`}
+                            >
+                                {range}
+                            </button>
+                        ))}
+                    </div>
+                    <button
+                        onClick={() => setShow1RM(v => !v)}
+                        className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border transition-all ${show1RM
+                            ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/40'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700'
+                        }`}
+                    >
+                        <Zap className="w-3 h-3" /> 1RM Epley
+                    </button>
                 </div>
             </div>
 
@@ -137,6 +171,7 @@ export default function PRChart({ data, exerciseName }) {
                             cursor={{ stroke: '#10B981', strokeWidth: 1, strokeDasharray: '4 4' }}
                             content={({ active, payload, label }) => {
                                 if (active && payload && payload.length) {
+                                    const point = payload[0].payload;
                                     return (
                                         <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border border-gray-200 dark:border-gray-700 p-3 rounded-xl shadow-xl text-xs">
                                             <p className="font-bold text-gray-900 dark:text-white mb-2">{label}</p>
@@ -144,13 +179,27 @@ export default function PRChart({ data, exerciseName }) {
                                                 <div className="flex items-center gap-3">
                                                     <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"></span>
                                                     <span className="text-gray-500 dark:text-gray-400 font-medium">Peso:</span>
-                                                    <span className="font-mono font-bold text-base text-gray-900 dark:text-white ml-auto">{payload[0].value} kg</span>
+                                                    <span className="font-mono font-bold text-base text-gray-900 dark:text-white ml-auto">{point.weight} kg</span>
                                                 </div>
-                                                {payload[0].payload.trend && (
+                                                {point.reps > 0 && (
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-2 h-2 rounded-full bg-gray-300"></span>
+                                                        <span className="text-gray-500 dark:text-gray-400">Reps:</span>
+                                                        <span className="font-mono text-gray-700 dark:text-gray-300 ml-auto">{point.reps}</span>
+                                                    </div>
+                                                )}
+                                                {point.orm && point.orm !== point.weight && (
+                                                    <div className="flex items-center gap-3 pt-1 border-t border-gray-100 dark:border-gray-800">
+                                                        <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                                                        <span className="text-amber-600 dark:text-amber-400 font-medium">1RM est.:</span>
+                                                        <span className="font-mono font-bold text-amber-700 dark:text-amber-300 ml-auto">{point.orm} kg</span>
+                                                    </div>
+                                                )}
+                                                {point.trend && (
                                                     <div className="flex items-center gap-3 pt-1 border-t border-gray-100 dark:border-gray-800">
                                                         <span className="w-2 h-2 rounded-full bg-blue-500/50"></span>
                                                         <span className="text-gray-400 dark:text-gray-500">Tendencia:</span>
-                                                        <span className="font-mono text-gray-400 dark:text-gray-500 ml-auto">~{payload[0].payload.trend.toFixed(1)} kg</span>
+                                                        <span className="font-mono text-gray-400 dark:text-gray-500 ml-auto">~{point.trend.toFixed(1)} kg</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -178,6 +227,19 @@ export default function PRChart({ data, exerciseName }) {
                             opacity={0.4}
                             animationDuration={1500}
                         />
+                        {show1RM && (
+                            <Line
+                                type="monotone"
+                                dataKey="orm"
+                                stroke="#F59E0B"
+                                strokeWidth={2}
+                                strokeDasharray="4 3"
+                                dot={{ r: 3, fill: '#F59E0B', strokeWidth: 0 }}
+                                activeDot={{ r: 6, strokeWidth: 0, fill: '#F59E0B' }}
+                                opacity={0.85}
+                                animationDuration={1500}
+                            />
+                        )}
                         <Line
                             type="monotone"
                             dataKey="weight"

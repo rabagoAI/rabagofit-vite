@@ -14,20 +14,34 @@ export const StatsWidget = () => {
         const totalDurationSeconds = workoutHistory.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
         const totalHours = (totalDurationSeconds / 3600).toFixed(1);
 
-        // Simplified volume calculation
         const totalVolume = workoutHistory.reduce((acc, workout) => {
-            // If we saved volume in history, use it. Else calculate (expensive)
-            // For this demo assuming rigorous calculation is done elsewhere or acceptable here
             const workoutVolume = workout.exercises ? workout.exercises.reduce((wAcc, ex) => {
                 return wAcc + ex.sets.reduce((sAcc, set) => sAcc + (set.weight * set.reps), 0);
             }, 0) : 0;
             return acc + workoutVolume;
         }, 0);
 
+        // Count PRs: for each exercise, count how many times max weight exceeded all previous sessions
+        const sortedHistory = [...workoutHistory].sort((a, b) => new Date(a.endTime) - new Date(b.endTime));
+        const allTimeBests = {};
+        let totalPRs = 0;
+        sortedHistory.forEach(workout => {
+            workout.exercises?.forEach(ex => {
+                const maxWeight = Math.max(...ex.sets.map(s => parseFloat(s.weight) || 0));
+                if (maxWeight > 0) {
+                    const prev = allTimeBests[ex.name] ?? 0;
+                    if (maxWeight > prev) {
+                        totalPRs++;
+                        allTimeBests[ex.name] = maxWeight;
+                    }
+                }
+            });
+        });
+
         return [
             { label: 'Entrenamientos', value: totalWorkouts, sub: 'Total', icon: Dumbbell, color: 'text-emerald-400', bg: 'bg-emerald-500/30' },
             { label: 'Horas Totales', value: totalHours, sub: 'Tiempo', icon: Clock, color: 'text-blue-400', bg: 'bg-blue-500/30' },
-            { label: 'Récords (Sim)', value: 0, sub: 'PRs', icon: Trophy, color: 'text-yellow-400', bg: 'bg-yellow-500/30' },
+            { label: 'Récords Personales', value: totalPRs, sub: 'PRs', icon: Trophy, color: 'text-yellow-400', bg: 'bg-yellow-500/30' },
             { label: 'kg Volumen', value: (totalVolume / 1000).toFixed(1) + 'k', sub: 'Total', icon: Activity, color: 'text-purple-400', bg: 'bg-purple-500/30' },
         ];
     }, [workoutHistory]);

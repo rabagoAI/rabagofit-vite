@@ -3,18 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useToast } from '../../context/ToastContext';
 import {
-    Calendar, Clock, Trophy, ChevronRight, Search, Filter,
+    Calendar, Clock, Trophy, Search,
     MoreVertical, Repeat, Share2, Trash2, Dumbbell
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfWeek, startOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ConfirmModal from '../common/ConfirmModal';
+
+const PERIOD_FILTERS = [
+    { id: 'all',      label: 'Todo' },
+    { id: 'week',     label: 'Esta semana' },
+    { id: 'month',    label: 'Este mes' },
+    { id: '3months',  label: 'Últimos 3 meses' },
+];
+
+function getPeriodStart(period) {
+    const now = new Date();
+    if (period === 'week')    return startOfWeek(now, { weekStartsOn: 1 });
+    if (period === 'month')   return startOfMonth(now);
+    if (period === '3months') return subMonths(now, 3);
+    return null;
+}
 
 export default function WorkoutHistoryList() {
     const { workoutHistory, startWorkout, deleteWorkout } = useWorkout();
     const { addToast } = useToast();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
+    const [periodFilter, setPeriodFilter] = useState('all');
     const [activeMenuId, setActiveMenuId] = useState(null);
     const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
@@ -26,29 +42,28 @@ export default function WorkoutHistoryList() {
     }, []);
 
     // Filter and Group Data
-    const groupedWorkouts = useMemo(() => {
-        if (!workoutHistory) return {};
+    const { groupedWorkouts, totalFiltered } = useMemo(() => {
+        if (!workoutHistory) return { groupedWorkouts: {}, totalFiltered: 0 };
 
-        const filtered = workoutHistory.filter(w =>
-            w.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        const periodStart = getPeriodStart(periodFilter);
+
+        const filtered = workoutHistory.filter(w => {
+            const matchesSearch = w.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesPeriod = !periodStart || new Date(w.endTime) >= periodStart;
+            return matchesSearch && matchesPeriod;
+        });
 
         const groups = {};
-
         filtered.forEach(workout => {
             const date = new Date(workout.endTime || Date.now());
             const monthKey = format(date, 'MMMM yyyy', { locale: es });
-            // Capitalize first letter
             const displayKey = monthKey.charAt(0).toUpperCase() + monthKey.slice(1);
-
-            if (!groups[displayKey]) {
-                groups[displayKey] = [];
-            }
+            if (!groups[displayKey]) groups[displayKey] = [];
             groups[displayKey].push(workout);
         });
 
-        return groups;
-    }, [workoutHistory, searchQuery]);
+        return { groupedWorkouts: groups, totalFiltered: filtered.length };
+    }, [workoutHistory, searchQuery, periodFilter]);
 
     const handleAction = (e, action, workout) => {
         e.stopPropagation(); // Prevent navigating to detail
@@ -102,6 +117,8 @@ export default function WorkoutHistoryList() {
         );
     }
 
+    const isFiltered = searchQuery || periodFilter !== 'all';
+
     return (
         <>
         <ConfirmModal
@@ -113,25 +130,55 @@ export default function WorkoutHistoryList() {
             onConfirm={() => { deleteWorkout(pendingDeleteId); setPendingDeleteId(null); }}
             onCancel={() => setPendingDeleteId(null)}
         />
-        <div className="space-y-8">
-            {/* Search & Stats */}
-            <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
+        <div className="space-y-6">
+            {/* Search + Period filters */}
+            <div className="space-y-3">
+                <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Buscar entrenamiento..."
-                        className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-gray-900 dark:text-white font-medium"
+                        placeholder="Buscar por nombre..."
+                        className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-gray-900 dark:text-white font-medium"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                {/* Could add filter dropdown here later */}
+                <div className="flex gap-2 flex-wrap">
+                    {PERIOD_FILTERS.map(f => (
+                        <button
+                            key={f.id}
+                            onClick={() => setPeriodFilter(f.id)}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                                periodFilter === f.id
+                                    ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
+                                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-600'
+                            }`}
+                        >
+                            {f.label}
+                        </button>
+                    ))}
+                    {isFiltered && (
+                        <span className="ml-auto self-center text-xs text-gray-400 font-medium">
+                            {totalFiltered} {totalFiltered === 1 ? 'resultado' : 'resultados'}
+                        </span>
+                    )}
+                </div>
             </div>
 
-            {Object.keys(groupedWorkouts).length === 0 && searchQuery && (
-                <div className="text-center py-12">
-                    <p className="text-gray-500 font-medium">No se encontraron entrenamientos para "{searchQuery}"</p>
+            {totalFiltered === 0 && (
+                <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+                    <Search className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">
+                        {searchQuery
+                            ? `Sin resultados para "${searchQuery}"`
+                            : 'Sin entrenamientos en este período'}
+                    </p>
+                    <button
+                        onClick={() => { setSearchQuery(''); setPeriodFilter('all'); }}
+                        className="mt-3 text-sm text-emerald-500 hover:underline font-medium"
+                    >
+                        Limpiar filtros
+                    </button>
                 </div>
             )}
 

@@ -26,6 +26,7 @@ const UserProfileSchema = z.object({
 const FullUserDataSchema = z.object({
     profile: UserProfileSchema,
     bodyStats: z.array(BodyStatSchema),
+    workoutHistory: z.array(z.any()).optional(),
     version: z.number()
 });
 
@@ -132,10 +133,16 @@ export function UserProvider({ children }) {
     // --- Data Management Tools ---
 
     const exportUserData = () => {
+        let workoutHistory = [];
+        try {
+            const raw = localStorage.getItem('rabago_workouts_history');
+            workoutHistory = raw ? JSON.parse(raw) : [];
+        } catch { /* ignore parse errors, export empty */ }
+
         const fullData = {
             profile: userProfile,
             bodyStats: bodyStats,
-            // Could include workoutHistory here too if provided/fetched
+            workoutHistory,
             version: 1,
             exportedAt: new Date().toISOString()
         };
@@ -149,6 +156,7 @@ export function UserProvider({ children }) {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        addToast(`Backup exportado con ${workoutHistory.length} entrenamientos`, { type: 'success' });
     };
 
     const importUserData = async (file) => {
@@ -170,9 +178,13 @@ export function UserProvider({ children }) {
         }
     };
 
-    const applyImportedData = ({ profile, bodyStats: stats }) => {
-        setUserProfile(profile);
-        setBodyStats(stats);
+    const applyImportedData = ({ profile, bodyStats: stats, workoutHistory }) => {
+        localStorage.setItem('rabago_user_profile', JSON.stringify(profile));
+        localStorage.setItem('rabago_body_stats', JSON.stringify(stats));
+        if (Array.isArray(workoutHistory)) {
+            localStorage.setItem('rabago_workouts_history', JSON.stringify(workoutHistory));
+        }
+        window.location.reload();
     };
 
     // --- Dashboard & Gamification ---

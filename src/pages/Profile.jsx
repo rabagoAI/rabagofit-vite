@@ -262,7 +262,7 @@ export default function Profile() {
             <ConfirmModal
                 isOpen={!!pendingImport}
                 title="¿Restaurar backup?"
-                message={`Se restaurarán los datos de "${pendingImport?.profile?.name}". Esto sobrescribirá tu perfil y estadísticas actuales.`}
+                message={`Se restaurarán los datos de "${pendingImport?.profile?.name}" incluyendo ${pendingImport?.workoutHistory?.length ?? 0} entrenamientos. Esto sobrescribirá todos tus datos actuales.`}
                 confirmLabel="Restaurar"
                 onConfirm={() => { applyImportedData(pendingImport); setPendingImport(null); }}
                 onCancel={() => setPendingImport(null)}

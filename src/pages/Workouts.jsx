@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import ActiveWorkoutView from '../components/workouts/ActiveWorkoutView';
+import WorkoutSummary from '../components/workouts/WorkoutSummary';
 import WorkoutHistoryList from '../components/workouts/WorkoutHistoryList';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { routines } from '../data/routines';
 import { Play, Dumbbell, Trash2 } from 'lucide-react';
 
 export default function Workouts() {
-    const { activeWorkout, startWorkout, clearHistory } = useWorkout();
+    const { activeWorkout, startWorkout, clearHistory, lastCompletedWorkout, clearLastCompleted } = useWorkout();
     const [showClearConfirm, setShowClearConfirm] = useState(false);
 
     if (activeWorkout) {
         return <ActiveWorkoutView />;
+    }
+
+    if (lastCompletedWorkout) {
+        return <WorkoutSummary summary={lastCompletedWorkout} onDone={clearLastCompleted} />;
     }
 
     // Pre-Start View

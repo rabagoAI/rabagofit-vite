@@ -89,7 +89,7 @@ export default function ActiveWorkoutView() {
 
     const handleFinish = () => {
         finishWorkout();
-        navigate('/progress'); // Or summary page
+        // Navigation is handled by WorkoutSummary after showing the results
     };
 
     const handleCancel = () => {

@@ -1,12 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Trash2, Check, X, History, TrendingUp, Volume2 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import ConfirmModal from '../common/ConfirmModal';
 
 // Simple beep sound (Base64 MP3 - 0.1s beep)
 const BEEP_SOUND = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//oeAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAFAAAAZQAJCQkJCQkJQUFBQUFBQUZmZmZmZmZmkwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABMYXZjNTguNTQuMTAwAAAAAAAAAAAA//oeBkAAACm7AAAACQAAAAA";
 
-export default function SetGroup({ exercise, exerciseIndex, updateSet, addSet, removeSet, removeExercise }) {
+export default function SetGroup({ exercise, exerciseIndex, updateSet, addSet, removeSet, removeExercise, onSetComplete }) {
     const { workoutHistory } = useWorkout();
+    const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
     // Calculate Estimated 1RM (Epley Formula)
     const calculate1RM = (weight, reps) => {
@@ -48,20 +50,32 @@ export default function SetGroup({ exercise, exerciseIndex, updateSet, addSet, r
     };
 
     const handleComplete = (setIndex, currentValue) => {
-        if (!currentValue) playSound(); // Only play sound when toggling ON
-        updateSet(exerciseIndex, setIndex, 'completed', !currentValue);
+        const completing = !currentValue;
+        if (completing) {
+            playSound();
+            onSetComplete?.();
+        }
+        updateSet(exerciseIndex, setIndex, 'completed', completing);
     };
 
     return (
+        <>
+        <ConfirmModal
+            isOpen={showRemoveConfirm}
+            title="¿Eliminar ejercicio?"
+            message={`Se eliminará "${exercise.name}" y todas sus series.`}
+            confirmLabel="Eliminar"
+            isDanger
+            onConfirm={() => { setShowRemoveConfirm(false); removeExercise(exerciseIndex); }}
+            onCancel={() => setShowRemoveConfirm(false)}
+        />
         <div className="mb-6 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm relative group overflow-hidden">
             {/* Header info */}
             <div className="flex flex-col mb-6">
                 <div className="flex items-center justify-between mb-2">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate pr-4">{exercise.name}</h3>
                     <button
-                        onClick={() => {
-                            if (confirm('¿Eliminar ejercicio?')) removeExercise(exerciseIndex);
-                        }}
+                        onClick={() => setShowRemoveConfirm(true)}
                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
                         title="Eliminar ejercicio"
                     >
@@ -164,6 +178,7 @@ export default function SetGroup({ exercise, exerciseIndex, updateSet, addSet, r
                 <TrendingUp className="w-4 h-4" /> Agregar Serie
             </button>
         </div>
+        </>
     );
 }
 

@@ -113,10 +113,8 @@ export default function Progress() {
         } else if (type === 'workouts') {
             clearHistory();
         } else if (type === 'both') {
-            if (confirm('¿Estás seguro de que quieres borrar TODAS las estadísticas de peso Y el historial de entrenamientos? Esta acción no se puede deshacer.')) {
-                clearBodyStats();
-                clearHistory();
-            }
+            clearBodyStats();
+            clearHistory();
         }
         setIsResetModalOpen(false);
     };

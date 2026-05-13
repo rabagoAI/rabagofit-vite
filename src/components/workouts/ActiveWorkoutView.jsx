@@ -7,8 +7,11 @@ import {
 import SetGroup from './SetGroup';
 import ActiveWorkoutStats from './ActiveWorkoutStats';
 import WorkoutNotes from './WorkoutNotes';
+import RestTimerOverlay from './RestTimerOverlay';
 import { exercises as exercisesData } from '../../data/exercises';
 import { useNavigate } from 'react-router-dom';
+import { useRestTimer } from '../../hooks/useRestTimer';
+import { useToast } from '../../context/ToastContext';
 
 export default function ActiveWorkoutView() {
     const {
@@ -16,11 +19,13 @@ export default function ActiveWorkoutView() {
         updateSet, addSet, removeSet, addExercise, removeExercise,
         undo, redo, canUndo, canRedo
     } = useWorkout();
+    const { addToast } = useToast();
 
     const [showAddExercise, setShowAddExercise] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
     const navigate = useNavigate();
+    const restTimer = useRestTimer(90);
 
     // --- Derived State for Progress ---
     const progress = useMemo(() => {
@@ -115,7 +120,7 @@ Vía RabagoFit ⚡`;
             }
         } else {
             navigator.clipboard.writeText(text);
-            alert('¡Copiado al portapapeles!');
+            addToast('Entrenamiento copiado al portapapeles', { type: 'success' });
         }
     };
 
@@ -201,6 +206,7 @@ Vía RabagoFit ⚡`;
                             addSet={addSet}
                             removeSet={removeSet}
                             removeExercise={removeExercise}
+                            onSetComplete={() => restTimer.start()}
                         />
                     ))}
                 </div>
@@ -259,6 +265,17 @@ Vía RabagoFit ⚡`;
                     </div>
                 </div>
             </div>
+
+            {/* Rest Timer Overlay */}
+            {restTimer.isActive && (
+                <RestTimerOverlay
+                    secondsLeft={restTimer.secondsLeft}
+                    duration={restTimer.duration}
+                    onSkip={restTimer.skip}
+                    onAdd={restTimer.addTime}
+                    onSubtract={restTimer.removeTime}
+                />
+            )}
 
             {/* Cancel Confirmation Modal */}
             {

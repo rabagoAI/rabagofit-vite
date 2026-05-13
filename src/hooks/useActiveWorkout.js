@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { WorkoutSchema } from '../schemas/workoutSchemas';
+import { useToast } from '../context/ToastContext';
 
 export function useActiveWorkout(timer) {
-    // --- State ---
+    const { addToast } = useToast();
     const [activeWorkout, setActiveWorkout] = useState(null);
     const [past, setPast] = useState([]);   // Undo stack
     const [future, setFuture] = useState([]); // Redo stack
@@ -171,7 +172,7 @@ export function useActiveWorkout(timer) {
         const result = WorkoutSchema.safeParse(finishedWorkout);
         if (!result.success) {
             console.error("Validation error finalizing workout:", result.error);
-            alert("Error de validación al finalizar. Revisa los datos.");
+            addToast('Error de validación al finalizar. Revisa los datos.', { type: 'warning', title: 'Error al finalizar' });
             return null;
         }
 

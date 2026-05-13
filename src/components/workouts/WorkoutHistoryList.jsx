@@ -1,18 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useToast } from '../../context/ToastContext';
 import {
     Calendar, Clock, Trophy, ChevronRight, Search, Filter,
     MoreVertical, Repeat, Share2, Trash2, Dumbbell
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import ConfirmModal from '../common/ConfirmModal';
 
 export default function WorkoutHistoryList() {
     const { workoutHistory, startWorkout, deleteWorkout } = useWorkout();
+    const { addToast } = useToast();
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeMenuId, setActiveMenuId] = useState(null);
+    const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
     // Close menu when clicking outside
     React.useEffect(() => {
@@ -66,13 +70,11 @@ export default function WorkoutHistoryList() {
                     navigator.share({ title: 'Mi Entrenamiento', text }).catch(() => { });
                 } else {
                     navigator.clipboard.writeText(text);
-                    alert('¡Resumen copiado al portapapeles!');
+                    addToast('Resumen copiado al portapapeles', { type: 'success' });
                 }
                 break;
             case 'delete':
-                if (window.confirm('¿Seguro que quieres borrar este entrenamiento del historial?')) {
-                    deleteWorkout(workout.id);
-                }
+                setPendingDeleteId(workout.id);
                 break;
         }
     };
@@ -101,6 +103,16 @@ export default function WorkoutHistoryList() {
     }
 
     return (
+        <>
+        <ConfirmModal
+            isOpen={!!pendingDeleteId}
+            title="¿Eliminar entrenamiento?"
+            message="Se borrará este registro del historial. Esta acción no se puede deshacer."
+            confirmLabel="Eliminar"
+            isDanger
+            onConfirm={() => { deleteWorkout(pendingDeleteId); setPendingDeleteId(null); }}
+            onCancel={() => setPendingDeleteId(null)}
+        />
         <div className="space-y-8">
             {/* Search & Stats */}
             <div className="flex flex-col sm:flex-row gap-4">
@@ -199,5 +211,6 @@ export default function WorkoutHistoryList() {
                 </div>
             ))}
         </div>
+        </>
     );
 }

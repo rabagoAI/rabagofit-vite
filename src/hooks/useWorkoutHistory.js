@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { WorkoutSchema } from '../schemas/workoutSchemas';
 import { z } from 'zod';
+import { useToast } from '../context/ToastContext';
 
 export function useWorkoutHistory() {
+    const { addToast } = useToast();
     const [history, setHistory] = useState(() => {
         try {
             const stored = JSON.parse(localStorage.getItem('rabago_workouts_history'));
@@ -34,7 +36,7 @@ export function useWorkoutHistory() {
         const result = WorkoutSchema.safeParse(workout);
         if (!result.success) {
             console.error("Cannot save invalid workout:", result.error);
-            alert("Error al guardar: Datos corruptos. Revisa la consola.");
+            addToast('No se pudo guardar el entrenamiento. Datos corruptos.', { type: 'warning', title: 'Error al guardar' });
             return;
         }
 
@@ -54,9 +56,7 @@ export function useWorkoutHistory() {
     };
 
     const clearHistory = () => {
-        if (confirm("¿Borrar todo el historial?")) {
-            setHistory([]);
-        }
+        setHistory([]);
     };
 
     return {

@@ -4,17 +4,21 @@ import { routines as templateRoutines } from '../data/routines';
 import RoutineCard from '../components/routines/RoutineCard';
 import RoutineEditor from '../components/routines/RoutineEditor';
 import SchedulerView from '../components/routines/SchedulerView';
+import ConfirmModal from '../components/common/ConfirmModal';
 import { useUser } from '../context/UserContext';
+import { useToast } from '../context/ToastContext';
 
 export default function Routines() {
     const { myRoutines, deleteRoutine, saveRoutine } = useUser();
+    const { addToast } = useToast();
 
     const [filter, setFilter] = useState('all');
-    const [activeTab, setActiveTab] = useState('my-routines'); // 'my-routines', 'templates', 'calendar'
+    const [activeTab, setActiveTab] = useState('my-routines');
 
     // Editor State
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [routineToEdit, setRoutineToEdit] = useState(null);
+    const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
     const filteredTemplates = filter === 'all'
         ? templateRoutines
@@ -38,15 +42,13 @@ export default function Routines() {
             isCustom: true
         };
         saveRoutine(newRoutine);
-        alert('Rutinada copiada a "Mis Rutinas"');
+        addToast(`"${template.name}" añadida a Mis Rutinas`, { type: 'success' });
         setActiveTab('my-routines');
     };
 
     const handleShare = (routine) => {
-        const data = JSON.stringify(routine);
-        // In real app: Generate link. Limit for now: Clipboard
-        navigator.clipboard.writeText(data);
-        alert('Datos de la rutina copiados al portapapeles (Simulación de Share)');
+        navigator.clipboard.writeText(JSON.stringify(routine));
+        addToast('Datos de la rutina copiados al portapapeles', { type: 'success' });
     };
 
     return (
@@ -171,7 +173,7 @@ export default function Routines() {
                                             <Edit2 className="w-4 h-4" />
                                         </button>
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); deleteRoutine(routine.id); }}
+                                            onClick={(e) => { e.stopPropagation(); setPendingDeleteId(routine.id); }}
                                             className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500"
                                             title="Eliminar"
                                         >
@@ -189,13 +191,21 @@ export default function Routines() {
                 <SchedulerView myRoutines={myRoutines} />
             )}
 
-            {/* Modal */}
             {isEditorOpen && (
                 <RoutineEditor
                     routineToEdit={routineToEdit}
                     onClose={() => setIsEditorOpen(false)}
                 />
             )}
+            <ConfirmModal
+                isOpen={!!pendingDeleteId}
+                title="¿Eliminar rutina?"
+                message="Se borrará esta rutina de tus rutinas personalizadas."
+                confirmLabel="Eliminar"
+                isDanger
+                onConfirm={() => { deleteRoutine(pendingDeleteId); setPendingDeleteId(null); }}
+                onCancel={() => setPendingDeleteId(null)}
+            />
         </div>
     );
 }

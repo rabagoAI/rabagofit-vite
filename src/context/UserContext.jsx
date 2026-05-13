@@ -121,9 +121,7 @@ export function UserProvider({ children }) {
     };
 
     const deleteRoutine = (id) => {
-        if (confirm('¿Estás seguro de que deseas eliminar esta rutina?')) {
-            setMyRoutines(prev => prev.filter(r => r.id !== id));
-        }
+        setMyRoutines(prev => prev.filter(r => r.id !== id));
     };
 
     const getLatestStat = () => {
@@ -157,29 +155,24 @@ export function UserProvider({ children }) {
         try {
             const text = await file.text();
             const json = JSON.parse(text);
-
-            // Validate structure
             const result = FullUserDataSchema.safeParse(json);
-
             if (!result.success) {
-                // Try looser validation or partial import
-                alert('Archivo de backup inválido o corrupto.');
+                addToast('Archivo de backup inválido o corrupto.', { type: 'warning', title: 'Error al importar' });
                 console.error(result.error);
-                return false;
+                return null;
             }
-
-            const { profile, bodyStats: stats } = result.data;
-            if (confirm(`¿Restaurar backup de ${profile.name}? Esto sobrescribirá tus datos actuales.`)) {
-                setUserProfile(profile);
-                setBodyStats(stats);
-                return true;
-            }
+            // Return parsed data so caller can show confirmation before applying
+            return result.data;
         } catch (e) {
             console.error(e);
-            alert('Error al leer el archivo.');
-            console.error(result.error);
-            return false;
+            addToast('Error al leer el archivo.', { type: 'warning', title: 'Error al importar' });
+            return null;
         }
+    };
+
+    const applyImportedData = ({ profile, bodyStats: stats }) => {
+        setUserProfile(profile);
+        setBodyStats(stats);
     };
 
     // --- Dashboard & Gamification ---
@@ -249,18 +242,14 @@ export function UserProvider({ children }) {
     };
 
     const resetUserData = () => {
-        if (confirm('PELIGRO: ¿Estás seguro de que quieres borrar TODOS tus datos locales? Esta acción no se puede deshacer.')) {
-            localStorage.clear();
-            setUserProfile(UserProfileSchema.parse({ name: 'Nuevo Usuario' }));
-            setBodyStats([]);
-            window.location.reload();
-        }
+        localStorage.clear();
+        setUserProfile(UserProfileSchema.parse({ name: 'Nuevo Usuario' }));
+        setBodyStats([]);
+        window.location.reload();
     };
 
     const clearBodyStats = () => {
-        if (confirm('¿Estás seguro de que quieres borrar todas tus estadísticas de peso? Esta acción no se puede deshacer.')) {
-            setBodyStats([]);
-        }
+        setBodyStats([]);
     };
 
     const syncToCloud = async () => {
@@ -287,6 +276,7 @@ export function UserProvider({ children }) {
             // Tools
             exportUserData,
             importUserData,
+            applyImportedData,
             resetUserData,
             // Cloud
             syncToCloud,

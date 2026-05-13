@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import ActiveWorkoutView from '../components/workouts/ActiveWorkoutView';
 import WorkoutHistoryList from '../components/workouts/WorkoutHistoryList';
+import ConfirmModal from '../components/common/ConfirmModal';
 import { routines } from '../data/routines';
 import { Play, Dumbbell, Trash2 } from 'lucide-react';
 
 export default function Workouts() {
     const { activeWorkout, startWorkout, clearHistory } = useWorkout();
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
 
     if (activeWorkout) {
         return <ActiveWorkoutView />;
@@ -84,7 +86,7 @@ export default function Workouts() {
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">Historial Reciente</h3>
                     <button
-                        onClick={() => clearHistory()}
+                        onClick={() => setShowClearConfirm(true)}
                         className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm"
                     >
                         <Trash2 className="w-4 h-4" />
@@ -99,6 +101,15 @@ export default function Workouts() {
                     <WorkoutHistoryList />
                 )}
             </section>
+            <ConfirmModal
+                isOpen={showClearConfirm}
+                title="¿Borrar historial completo?"
+                message="Se eliminarán todos los entrenamientos registrados. Esta acción no se puede deshacer."
+                confirmLabel="Borrar todo"
+                isDanger
+                onConfirm={() => { clearHistory(); setShowClearConfirm(false); }}
+                onCancel={() => setShowClearConfirm(false)}
+            />
         </div>
     );
 }

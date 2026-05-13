@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
 import {
     User, Mail, Ruler, Calendar, Save, Download, Upload,
-    Trash2, AlertTriangle, Sun, Moon, Monitor, Coffee, Eye,
-    CheckCircle, X
+    Trash2, AlertTriangle, Sun, Moon, Monitor, Coffee, Eye, CheckCircle
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 const THEME_OPTIONS = [
     { id: 'light',         label: 'Claro',          icon: Sun },
@@ -22,9 +22,10 @@ const GENDER_OPTIONS = [
 ];
 
 export default function Profile() {
-    const { userProfile, updateProfile, exportUserData, importUserData, resetUserData } = useUser();
+    const { userProfile, updateProfile, exportUserData, importUserData, applyImportedData, resetUserData } = useUser();
     const { theme, setTheme } = useTheme();
 
+    const [pendingImport, setPendingImport] = useState(null);
     const [form, setForm] = useState({
         name:      userProfile.name      || '',
         email:     userProfile.email     || '',
@@ -56,7 +57,8 @@ export default function Profile() {
     const handleImport = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        await importUserData(file);
+        const data = await importUserData(file);
+        if (data) setPendingImport(data);
         e.target.value = '';
     };
 
@@ -256,42 +258,26 @@ export default function Profile() {
                 </button>
             </section>
 
+            {/* Import Confirmation Modal */}
+            <ConfirmModal
+                isOpen={!!pendingImport}
+                title="¿Restaurar backup?"
+                message={`Se restaurarán los datos de "${pendingImport?.profile?.name}". Esto sobrescribirá tu perfil y estadísticas actuales.`}
+                confirmLabel="Restaurar"
+                onConfirm={() => { applyImportedData(pendingImport); setPendingImport(null); }}
+                onCancel={() => setPendingImport(null)}
+            />
+
             {/* Reset Confirmation Modal */}
-            {showResetConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in-95 duration-200">
-                        <button
-                            onClick={() => setShowResetConfirm(false)}
-                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                        <div className="flex justify-center mb-4">
-                            <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                                <AlertTriangle className="w-7 h-7 text-red-500" />
-                            </div>
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 text-center">¿Borrar todo?</h3>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm text-center mb-6">
-                            Se eliminarán todos tus datos locales. Esta acción es irreversible.
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowResetConfirm(false)}
-                                className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={() => { setShowResetConfirm(false); resetUserData(); }}
-                                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors"
-                            >
-                                Sí, borrar todo
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmModal
+                isOpen={showResetConfirm}
+                title="¿Borrar todos los datos?"
+                message="Se eliminarán permanentemente todos tus datos locales. Esta acción es irreversible."
+                confirmLabel="Sí, borrar todo"
+                isDanger
+                onConfirm={() => { setShowResetConfirm(false); resetUserData(); }}
+                onCancel={() => setShowResetConfirm(false)}
+            />
         </div>
     );
 }

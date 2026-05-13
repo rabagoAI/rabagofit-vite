@@ -15,11 +15,13 @@ export default function RoutineEditor({ routineToEdit, onClose }) {
     // Exercise Selector State
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [formError, setFormError] = useState('');
 
     const handleSave = (e) => {
         e.preventDefault();
-        if (!name) return alert('El nombre es obligatorio');
-        if (exercises.length === 0) return alert('Agrega al menos un ejercicio');
+        if (!name) { setFormError('El nombre es obligatorio'); return; }
+        if (exercises.length === 0) { setFormError('Agrega al menos un ejercicio'); return; }
+        setFormError('');
 
         const newRoutine = {
             id: routineToEdit?.id || Date.now(),
@@ -188,7 +190,11 @@ export default function RoutineEditor({ routineToEdit, onClose }) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-3 md:p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex justify-end gap-2 md:gap-3 rounded-b-2xl">
+                <div className="p-3 md:p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 flex flex-col gap-2 rounded-b-2xl">
+                    {formError && (
+                        <p className="text-sm text-red-500 font-medium text-center">{formError}</p>
+                    )}
+                    <div className="flex justify-end gap-2 md:gap-3">
                     <button onClick={onClose} className="px-6 py-3 font-bold text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                         Cancelar
                     </button>
@@ -198,6 +204,7 @@ export default function RoutineEditor({ routineToEdit, onClose }) {
                     >
                         <Save className="w-5 h-5" /> Guardar
                     </button>
+                    </div>
                 </div>
 
                 {/* Exercise Selector Modal (Nested) */}

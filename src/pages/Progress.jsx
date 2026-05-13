@@ -3,10 +3,10 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     AreaChart, Area
 } from 'recharts';
-import { Calendar, TrendingUp, Activity, Weight, Plus, X, Trash2, AlertTriangle } from 'lucide-react';
+import { Calendar, TrendingUp, Activity, Weight, Plus, X, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWorkout } from '../context/WorkoutContext';
 import { useUser } from '../context/UserContext';
-import { format, subDays, startOfWeek, addDays, getDay } from 'date-fns';
+import { format, subDays, startOfWeek, addDays, getDay, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import PRChart from '../components/progress/PRChart';
 import { Trophy } from 'lucide-react';
@@ -17,11 +17,12 @@ export default function Progress() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [weightInput, setWeightInput] = useState('');
     const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+    const [weekOffset, setWeekOffset] = useState(0);
 
     // Weekly Volume Logic
     const weeklyData = useMemo(() => {
-        const today = new Date();
-        const start = startOfWeek(today, { weekStartsOn: 1 }); // Monday start
+        const base = addDays(new Date(), weekOffset * 7);
+        const start = startOfWeek(base, { weekStartsOn: 1 }); // Monday start
         const days = [];
 
         for (let i = 0; i < 7; i++) {
@@ -40,7 +41,19 @@ export default function Progress() {
             days.push({ name: label.charAt(0).toUpperCase() + label.slice(1), volume: volume / 1000 }); // Volume in tonnes (k)
         }
         return days;
-    }, [workoutHistory]);
+    }, [workoutHistory, weekOffset]);
+
+    const weekLabel = useMemo(() => {
+        if (weekOffset === 0) return 'Esta semana';
+        if (weekOffset === -1) return 'Semana pasada';
+        const base = addDays(new Date(), weekOffset * 7);
+        const start = startOfWeek(base, { weekStartsOn: 1 });
+        const end = endOfWeek(base, { weekStartsOn: 1 });
+        const sameMonth = format(start, 'M') === format(end, 'M');
+        return sameMonth
+            ? `${format(start, 'd')} - ${format(end, 'd MMM', { locale: es })}`
+            : `${format(start, 'd MMM', { locale: es })} - ${format(end, 'd MMM', { locale: es })}`;
+    }, [weekOffset]);
 
     // Weight Data Logic
     const weightChartData = useMemo(() => {
@@ -152,6 +165,24 @@ export default function Progress() {
                             <Activity className="w-5 h-5 text-emerald-500" />
                             Volumen Semanal (Ton)
                         </h3>
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => setWeekOffset(o => o - 1)}
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 min-w-[100px] text-center">
+                                {weekLabel}
+                            </span>
+                            <button
+                                onClick={() => setWeekOffset(o => o + 1)}
+                                disabled={weekOffset >= 0}
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                     <div className="h-48 sm:h-56 md:h-64">
                         {weeklyData.some(d => d.volume > 0) ? (
